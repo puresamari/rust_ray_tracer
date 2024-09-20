@@ -9,7 +9,19 @@ use math::{
 };
 use ray_tracer::ray::Ray;
 
+fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
+    let oc = center - r.origin();
+    let a = Vec3::dot(&r.direction(), &r.direction());
+    let b = -2.0 * Vec3::dot(&r.direction(), &oc);
+    let c = Vec3::dot(&oc, &oc) - radius * radius;
+    let discriminant = b * b - 4. * a * c;
+    return discriminant >= 0.;
+}
+
 fn ray_color(r: &Ray) -> Color {
+    if hit_sphere(Point3::new(0., 0., -1.), 0.5, r) {
+        return Color::new(1., 0., 0.);
+    }
     let unit_direction = r.direction().unit_vector();
     let a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
@@ -38,7 +50,7 @@ fn main() {
 
     // Calculate the location of the upper left pixel
     let viewport_upper_left =
-        camera_center - Vec3::new(0., 0., focal_length) - viewport_u / 2. - viewport_u / 2.;
+        camera_center - Vec3::new(0., 0., focal_length) - viewport_u / 2. - viewport_v / 2.;
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     // Render
