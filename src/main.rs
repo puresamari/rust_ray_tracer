@@ -15,21 +15,6 @@ use ray_tracer::{
     ray::Ray,
 };
 
-// fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
-//     let oc = center - r.origin();
-
-//     let a = r.direction().length_squared();
-//     let h = Vec3::dot(&r.direction(), &oc);
-//     let c = oc.length_squared() - radius * radius;
-//     let discriminant = h * h - a * c;
-
-//     if discriminant < 0. {
-//         return -1.0;
-//     } else {
-//         return (h - f64::sqrt(discriminant)) / a;
-//     }
-// }
-
 fn ray_color(r: &Ray, world: &(dyn Hittable)) -> Color {
     let mut rec: HitRecord = HitRecord {
         t: 0.,
@@ -42,11 +27,6 @@ fn ray_color(r: &Ray, world: &(dyn Hittable)) -> Color {
         return 0.5 * (rec.normal + Color::one());
     }
 
-    // let t = hit_sphere(Point3::new(0., 0., -1.), 0.5, r);
-    // if t > 0. {
-    //     let n = (r.at(t) - Vec3::new(0., 0., -1.)).unit_vector();
-    //     return 0.5 * Color::new(n.x() + 1., n.y() + 1., n.z() + 1.);
-    // }
     let unit_direction = r.direction().unit_vector();
     let a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
