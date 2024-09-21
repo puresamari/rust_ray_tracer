@@ -1,27 +1,52 @@
 mod math;
 mod ray_tracer;
 
-use std::io;
+use std::{io, sync::Arc};
 
 use math::{
+    constants::INFINITY,
     max::max_i32,
     vec3::{write_color, Color, Point3, Vec3},
 };
-use ray_tracer::ray::Ray;
+use ray_tracer::{
+    hittable::{HitRecord, Hittable},
+    hittable_list::HittableList,
+    primitives::sphere::Sphere,
+    ray::Ray,
+};
 
-fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
-    let oc = center - r.origin();
-    let a = Vec3::dot(&r.direction(), &r.direction());
-    let b = -2.0 * Vec3::dot(&r.direction(), &oc);
-    let c = Vec3::dot(&oc, &oc) - radius * radius;
-    let discriminant = b * b - 4. * a * c;
-    return discriminant >= 0.;
-}
+// fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
+//     let oc = center - r.origin();
 
-fn ray_color(r: &Ray) -> Color {
-    if hit_sphere(Point3::new(0., 0., -1.), 0.5, r) {
-        return Color::new(1., 0., 0.);
+//     let a = r.direction().length_squared();
+//     let h = Vec3::dot(&r.direction(), &oc);
+//     let c = oc.length_squared() - radius * radius;
+//     let discriminant = h * h - a * c;
+
+//     if discriminant < 0. {
+//         return -1.0;
+//     } else {
+//         return (h - f64::sqrt(discriminant)) / a;
+//     }
+// }
+
+fn ray_color(r: &Ray, world: &(dyn Hittable)) -> Color {
+    let mut rec: HitRecord = HitRecord {
+        t: 0.,
+        p: Point3::zero(),
+        normal: Vec3::zero(),
+        front_face: false,
+    };
+
+    if world.hit(r, 0., INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Color::one());
     }
+
+    // let t = hit_sphere(Point3::new(0., 0., -1.), 0.5, r);
+    // if t > 0. {
+    //     let n = (r.at(t) - Vec3::new(0., 0., -1.)).unit_vector();
+    //     return 0.5 * Color::new(n.x() + 1., n.y() + 1., n.z() + 1.);
+    // }
     let unit_direction = r.direction().unit_vector();
     let a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
@@ -30,6 +55,13 @@ fn ray_color(r: &Ray) -> Color {
 fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
+
+    // World
+
+    let mut world = HittableList::new();
+
+    world.add(Arc::new(Sphere::new(Point3::new(0., 0., -1.), 0.5)));
+    world.add(Arc::new(Sphere::new(Point3::new(0., -100.5, -1.), 100.)));
 
     // Calculate the image height, and ensure that it's at least 1.
     let image_height = max_i32(1, (image_width as f64 / aspect_ratio) as i32);
@@ -65,7 +97,7 @@ fn main() {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
 
             let _ = write_color(&mut io::stdout(), pixel_color);
         }

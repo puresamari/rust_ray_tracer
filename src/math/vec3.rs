@@ -25,7 +25,7 @@ impl Vec3 {
     pub fn unit_vector(&self) -> Vec3 { *self / self.length() }
 
     // Dot product
-    pub fn dot(a: &Vec3, b: &Vec3) -> f64 { a.x * b.x + a.y * b.y + a.z * b.z }
+    pub fn dot(&self, b: &Vec3) -> f64 { self.x * b.x + self.y * b.y + self.z * b.z }
 
     // Cross product
     pub fn cross(&self, other: &Vec3) -> Vec3 {
