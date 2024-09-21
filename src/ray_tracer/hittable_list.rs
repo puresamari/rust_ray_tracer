@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use crate::math::interval::Interval;
+
 use super::hittable::{HitRecord, Hittable};
 
 pub struct HittableList {
@@ -30,16 +32,15 @@ impl Hittable for HittableList {
     fn hit(
         &self,
         r: &crate::ray_tracer::ray::Ray,
-        ray_tmin: f64,
-        ray_tmax: f64,
+        ray_t: Interval,
         rec: &mut crate::ray_tracer::hittable::HitRecord,
     ) -> bool {
         let temp_rec: Option<HitRecord> = None;
         let mut hit_anything = false;
-        let mut closest_so_far = ray_tmax;
+        let mut closest_so_far = ray_t.max;
 
         for object in self.objects.iter() {
-            if object.hit(r, ray_tmin, closest_so_far, rec) {
+            if object.hit(r, Interval::new(ray_t.min, closest_so_far), rec) {
                 hit_anything = true;
                 closest_so_far = rec.t;
                 match temp_rec {

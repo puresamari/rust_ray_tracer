@@ -5,6 +5,7 @@ use std::{io, sync::Arc};
 
 use math::{
     constants::INFINITY,
+    interval::Interval,
     max::max_i32,
     vec3::{write_color, Color, Point3, Vec3},
 };
@@ -23,7 +24,7 @@ fn ray_color(r: &Ray, world: &(dyn Hittable)) -> Color {
         front_face: false,
     };
 
-    if world.hit(r, 0., INFINITY, &mut rec) {
+    if world.hit(r, Interval::new(0., INFINITY), &mut rec) {
         return 0.5 * (rec.normal + Color::one());
     }
 
