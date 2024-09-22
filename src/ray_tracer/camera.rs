@@ -1,11 +1,12 @@
-use std::io::stdout;
-
 use crate::math::{
     constants::INFINITY,
     interval::Interval,
     max::max_i32,
-    vec3::{write_color, Color, Point3, Vec3},
+    random::random_f64,
+    vec3::{Color, Point3, Vec3},
 };
+use std::io::stdout;
+use std::io::{self, Write};
 
 use super::{
     hittable::{HitRecord, Hittable},
@@ -15,12 +16,14 @@ use super::{
 pub struct Camera {
     pub aspect_ratio: f64,
     pub image_width: i32,
+    pub samples_per_pixel: i32,
 
     image_height: i32,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    pixel_samples_scale: f64, // Color scale factor for a sum of pixel samples
 }
 
 impl Camera {
@@ -32,35 +35,45 @@ impl Camera {
         for j in 0..self.image_height {
             eprintln!("Scanlines remaining: {}", self.image_height - j);
             for i in 0..self.image_width {
-                let pixel_center = self.pixel00_loc
-                    + ((i as f64) * self.pixel_delta_u)
-                    + ((j as f64) * self.pixel_delta_v);
-                let ray_direction = pixel_center - self.center;
-                let r = Ray::new(self.center, ray_direction);
+                let mut pixel_color = Color::zero();
+                for _ in 0..self.samples_per_pixel {
+                    let ray = self.get_ray(i, j);
+                    pixel_color = pixel_color + self.ray_color(&ray, world);
+                }
 
-                let pixel_color = self.ray_color(&r, world);
+                // let pixel_center = self.pixel00_loc
+                //     + ((i as f64) * self.pixel_delta_u)
+                //     + ((j as f64) * self.pixel_delta_v);
+                // let ray_direction = pixel_center - self.center;
+                // let r = Ray::new(self.center, ray_direction);
 
-                let _ = write_color(&mut stdout(), pixel_color);
+                // let pixel_color = self.ray_color(&r, world);
+
+                let _ = write_color(&mut stdout(), self.pixel_samples_scale * pixel_color);
             }
         }
         eprint!("Done.\n");
     }
 
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Self {
+    pub fn new() -> Self {
         Camera {
-            aspect_ratio,
-            image_width,
-            image_height: 0,
+            aspect_ratio: 16.0 / 9.0,
+            image_width: 400,
+            image_height: 10,
+            samples_per_pixel: 10,
             center: Point3::zero(),
             pixel00_loc: Point3::zero(),
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
+            pixel_samples_scale: 1.0 / 10.,
         }
     }
 
     pub fn initialize(&mut self) {
         // Calculate the image height, and ensure that it's at least 1.
         self.image_height = max_i32(1, (self.image_width as f64 / self.aspect_ratio) as i32);
+
+        self.pixel_samples_scale = 1.0 / (self.samples_per_pixel as f64);
 
         self.center = Point3::new(0., 0., 0.);
 
@@ -84,6 +97,25 @@ impl Camera {
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
+    // Construct a camera ray originating from the origin and directed at randomly sampled
+    // point around the pixel location i, j.
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let offset = self.sample_square();
+        let pixel_sample = self.pixel00_loc
+            + (((i as f64) + offset.y()) * self.pixel_delta_u)
+            + (((j as f64) + offset.x()) * self.pixel_delta_v);
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - self.center;
+
+        return Ray::new(ray_origin, ray_direction);
+    }
+
+    // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+    fn sample_square(&self) -> Vec3 {
+        Vec3::new(random_f64() - 0.5, random_f64() - 0.5, 0.)
+    }
+
     fn ray_color(&self, r: &Ray, world: &(dyn Hittable)) -> Color {
         let mut rec: HitRecord = HitRecord {
             t: 0.,
@@ -100,4 +132,20 @@ impl Camera {
         let a = 0.5 * (unit_direction.y() + 1.0);
         return (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0);
     }
+}
+
+const INTENSITY: Interval = Interval { min: 0.0, max: 1.0 };
+
+pub fn write_color<W: Write>(out: &mut W, pixel_color: Color) -> io::Result<()> {
+    let r = pixel_color.x();
+    let g = pixel_color.y();
+    let b = pixel_color.z();
+
+    // Translate the [0,1] component values to the byte range [0,255].
+    let rbyte = (256. * INTENSITY.clamp(r)) as i32;
+    let gbyte = (256. * INTENSITY.clamp(g)) as i32;
+    let bbyte = (256. * INTENSITY.clamp(b)) as i32;
+
+    // Write out the pixel color components.
+    writeln!(out, "{} {} {}", rbyte, gbyte, bbyte)
 }
