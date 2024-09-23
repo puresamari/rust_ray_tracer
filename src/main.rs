@@ -4,6 +4,7 @@ mod ray_tracer;
 use std::sync::Arc;
 
 use math::vec3::{Color, Point3};
+use ray_tracer::camera::CameraConfig;
 use ray_tracer::materials::dialectric::Dialectric;
 use ray_tracer::materials::lambertian::Lambertian;
 use ray_tracer::materials::metal::Metal;
@@ -56,11 +57,12 @@ fn main() {
         material_right,
     )));
 
-    let mut camera = Camera::new();
-    camera.aspect_ratio = 16.0 / 9.0;
-    camera.image_width = 400;
-    camera.samples_per_pixel = 100;
-    camera.max_depth = 50;
+    let mut camera = Camera::new_with_config(CameraConfig {
+        aspect_ratio: 16.0 / 9.0,
+        image_width: 400,
+        samples_per_pixel: 100,
+        max_depth: 50,
+    });
 
     camera.render(&world);
 }

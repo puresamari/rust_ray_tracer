@@ -15,11 +15,15 @@ use super::{
     ray::Ray,
 };
 
-pub struct Camera {
+pub struct CameraConfig {
     pub aspect_ratio: f64,
     pub image_width: u32,
     pub samples_per_pixel: u32,
     pub max_depth: u32,
+}
+
+pub struct Camera {
+    pub config: CameraConfig,
 
     image_height: u32,
     center: Point3,
@@ -33,17 +37,17 @@ impl Camera {
     pub fn render(&mut self, world: &(dyn Hittable)) {
         self.initialize();
 
-        let bar = ProgressBar::new((self.image_height as u64) * (self.image_width as u64));
+        let bar = ProgressBar::new((self.image_height as u64) * (self.config.image_width as u64));
 
-        println!("P3\n{} {}\n255", self.image_width, self.image_height);
+        println!("P3\n{} {}\n255", self.config.image_width, self.image_height);
 
         for j in 0..self.image_height {
-            for i in 0..self.image_width {
+            for i in 0..self.config.image_width {
                 bar.inc(1);
                 let mut pixel_color = Color::zero();
-                for _ in 0..self.samples_per_pixel {
+                for _ in 0..self.config.samples_per_pixel {
                     let ray = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.ray_color(&ray, self.max_depth, world);
+                    pixel_color = pixel_color + self.ray_color(&ray, self.config.max_depth, world);
                 }
                 let _ = write_color(&mut stdout(), self.pixel_samples_scale * pixel_color);
             }
@@ -51,26 +55,35 @@ impl Camera {
         bar.finish();
     }
 
-    pub fn new() -> Self {
+    pub fn new_with_config(config: CameraConfig) -> Self {
         Camera {
-            aspect_ratio: 16.0 / 9.0,
-            image_width: 400,
+            config,
             image_height: 10,
-            samples_per_pixel: 10,
             center: Point3::zero(),
             pixel00_loc: Point3::zero(),
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
             pixel_samples_scale: 1.0 / 10.,
-            max_depth: 10,
         }
+    }
+
+    pub fn new() -> Self {
+        Camera::new_with_config(CameraConfig {
+            aspect_ratio: 16.0 / 9.0,
+            image_width: 400,
+            samples_per_pixel: 100,
+            max_depth: 50,
+        })
     }
 
     pub fn initialize(&mut self) {
         // Calculate the image height, and ensure that it's at least 1.
-        self.image_height = max_u32(1, (self.image_width as f64 / self.aspect_ratio) as u32);
+        self.image_height = max_u32(
+            1,
+            (self.config.image_width as f64 / self.config.aspect_ratio) as u32,
+        );
 
-        self.pixel_samples_scale = 1.0 / (self.samples_per_pixel as f64);
+        self.pixel_samples_scale = 1.0 / (self.config.samples_per_pixel as f64);
 
         self.center = Point3::new(0., 0., 0.);
 
@@ -78,14 +91,14 @@ impl Camera {
         let focal_length = 1.0;
         let viewport_height = 2.0;
         let viewport_width =
-            viewport_height * ((self.image_width as f64) / (self.image_height as f64));
+            viewport_height * ((self.config.image_width as f64) / (self.image_height as f64));
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
         let viewport_u = Vec3::new(viewport_width, 0., 0.);
         let viewport_v = Vec3::new(0., -viewport_height, 0.);
 
         // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-        self.pixel_delta_u = viewport_u / (self.image_width as f64);
+        self.pixel_delta_u = viewport_u / (self.config.image_width as f64);
         self.pixel_delta_v = viewport_v / (self.image_height as f64);
 
         // Calculate the location of the upper left pixel
