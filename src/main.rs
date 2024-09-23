@@ -4,6 +4,7 @@ mod ray_tracer;
 use std::sync::Arc;
 
 use math::vec3::{Color, Point3};
+use ray_tracer::materials::dialectric::Dialectric;
 use ray_tracer::materials::lambertian::Lambertian;
 use ray_tracer::materials::metal::Metal;
 use ray_tracer::primitives::sphere::Sphere;
@@ -18,9 +19,11 @@ fn main() {
     let material_center = Arc::new(Lambertian {
         albedo: Color::new(0.1, 0.2, 0.5),
     });
-    let material_left = Arc::new(Metal {
-        albedo: Color::new(0.8, 0.8, 0.8),
-        fuzz: 0.3,
+    let material_left = Arc::new(Dialectric {
+        refraction_index: 1.5,
+    });
+    let material_bubble = Arc::new(Dialectric {
+        refraction_index: 1. / 1.5,
     });
     let material_right = Arc::new(Metal {
         albedo: Color::new(0.8, 0.6, 0.2),
@@ -41,6 +44,11 @@ fn main() {
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         material_left,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.4,
+        material_bubble,
     )));
     world.add(Arc::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),

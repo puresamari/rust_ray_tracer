@@ -1,8 +1,8 @@
 use std::fmt::{self, Debug};
-use std::io::Write;
 use std::ops::{Add, Div, Mul, Sub};
 
 use super::interval::Interval;
+use super::min::min_f64;
 use super::random::{random_f64, random_f64_in_interval};
 
 #[derive(Clone, Copy)]
@@ -106,6 +106,13 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: &Vec3) -> Self {
         return *self - 2. * self.dot(normal) * *normal;
+    }
+
+    pub fn refract(&self, normal: &Vec3, etai_over_etat: f64) -> Self {
+        let cos_theta = min_f64(self.inverted().dot(normal), 1.0);
+        let r_out_perp = etai_over_etat * (*self + cos_theta * *normal);
+        let r_out_parallel = (-f64::sqrt(f64::abs(1.0 - r_out_perp.length_squared()))) * *normal;
+        return r_out_perp + r_out_parallel;
     }
 }
 
