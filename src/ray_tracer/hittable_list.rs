@@ -43,7 +43,7 @@ impl Hittable for HittableList {
             if object.hit(r, Interval::new(ray_t.min, closest_so_far), rec) {
                 hit_anything = true;
                 closest_so_far = rec.t;
-                match temp_rec {
+                match &temp_rec {
                     Some(temp_rec) => {
                         rec.t = temp_rec.t;
                         rec.p = temp_rec.p;

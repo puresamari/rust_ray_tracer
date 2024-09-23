@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::io::Write;
 use std::ops::{Add, Div, Mul, Sub};
 
@@ -99,39 +99,14 @@ impl Vec3 {
         }
     }
 
-    // pub fn random_unit_vector() -> Option<Self> {
-    //     // Try 100 times to get a random unit vector
-    //     for _ in 0..1000 {
-    //         let p = Vec3::random_interval(Interval::new(-1.0, 1.0));
-    //         let lensq = p.length_squared();
-    //         // If the length is between 0 and 1, return the unit vector
-    //         // Prevent p from being the zero vector
-    //         if lensq < 1.0 && 1e-160 < lensq {
-    //             return Some(p.unit_vector());
-    //         }
-    //     }
-    //     eprintln!("Vec3::random_unit_vector() failed to find a unit vector");
-    //     None
-    // }
+    pub fn is_near_zero(&self) -> bool {
+        let s = 1e-8;
+        return self.x.abs() < s && self.y.abs() < s && self.z.abs() < s;
+    }
 
-    // pub fn random_unit_vector_on_hemisphere(normal: &Vec3) -> Self {
-    //     let on_unit_sphere = Vec3::random_unit_vector();
-    //     match on_unit_sphere {
-    //         Some(v) => {
-    //             if v.dot(normal) > 0.0 {
-    //                 v
-    //             } else {
-    //                 0. - v
-    //             }
-    //         }
-    //         None => normal.unit_vector(),
-    //     }
-    //     // if on_unit_sphere.dot(normal) > 0.0 {
-    //     //     on_unit_sphere
-    //     // } else {
-    //     //     0. - on_unit_sphere
-    //     // }
-    // }
+    pub fn reflect(&self, normal: &Vec3) -> Self {
+        return *self - 2. * self.dot(normal) * *normal;
+    }
 }
 
 // Add
@@ -258,5 +233,11 @@ pub type Color = Vec3;
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
+    }
+}
+
+impl Debug for Vec3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Vec3({}, {}, {})", self.x, self.y, self.z)
     }
 }

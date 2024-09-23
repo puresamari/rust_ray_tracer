@@ -1,11 +1,14 @@
+use std::sync::Arc;
+
 use crate::math::{interval::Interval, vec3::Vec3};
 
-use super::ray::Ray;
+use super::{material::Material, ray::Ray};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub t: f64,
     pub p: Vec3,
+    pub mat: Arc<dyn Material>,
     pub normal: Vec3,
     pub front_face: bool,
 }

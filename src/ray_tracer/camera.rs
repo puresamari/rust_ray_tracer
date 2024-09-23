@@ -1,25 +1,27 @@
 use crate::math::{
     constants::INFINITY,
     interval::Interval,
-    max::max_i32,
+    max::max_u32,
     random::random_f64,
     vec3::{Color, Point3, Vec3},
 };
-use std::io::stdout;
+use indicatif::ProgressBar;
 use std::io::{self, Write};
+use std::{io::stdout, sync::Arc};
 
 use super::{
     hittable::{HitRecord, Hittable},
+    materials::lambertian::Lambertian,
     ray::Ray,
 };
 
 pub struct Camera {
     pub aspect_ratio: f64,
-    pub image_width: i32,
-    pub samples_per_pixel: i32,
-    pub max_depth: i32,
+    pub image_width: u32,
+    pub samples_per_pixel: u32,
+    pub max_depth: u32,
 
-    image_height: i32,
+    image_height: u32,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -31,11 +33,13 @@ impl Camera {
     pub fn render(&mut self, world: &(dyn Hittable)) {
         self.initialize();
 
+        let bar = ProgressBar::new((self.image_height as u64) * (self.image_width as u64));
+
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
         for j in 0..self.image_height {
-            eprintln!("Scanlines remaining: {}", self.image_height - j);
             for i in 0..self.image_width {
+                bar.inc(1);
                 let mut pixel_color = Color::zero();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
@@ -44,7 +48,7 @@ impl Camera {
                 let _ = write_color(&mut stdout(), self.pixel_samples_scale * pixel_color);
             }
         }
-        eprint!("Done.\n");
+        bar.finish();
     }
 
     pub fn new() -> Self {
@@ -64,7 +68,7 @@ impl Camera {
 
     pub fn initialize(&mut self) {
         // Calculate the image height, and ensure that it's at least 1.
-        self.image_height = max_i32(1, (self.image_width as f64 / self.aspect_ratio) as i32);
+        self.image_height = max_u32(1, (self.image_width as f64 / self.aspect_ratio) as u32);
 
         self.pixel_samples_scale = 1.0 / (self.samples_per_pixel as f64);
 
@@ -92,7 +96,7 @@ impl Camera {
 
     // Construct a camera ray originating from the origin and directed at randomly sampled
     // point around the pixel location i, j.
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32) -> Ray {
         let offset = self.sample_square();
         let pixel_sample = self.pixel00_loc
             + (((i as f64) + offset.y()) * self.pixel_delta_u)
@@ -112,7 +116,7 @@ impl Camera {
         Vec3::new(random_f64() - 0.5, random_f64() - 0.5, 0.)
     }
 
-    fn ray_color(&self, r: &Ray, depth: i32, world: &(dyn Hittable)) -> Color {
+    fn ray_color(&self, r: &Ray, depth: u32, world: &(dyn Hittable)) -> Color {
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if depth <= 0 {
             return Color::zero();
@@ -123,15 +127,24 @@ impl Camera {
             p: Point3::zero(),
             normal: Vec3::zero(),
             front_face: false,
+            mat: Arc::new(Lambertian {
+                albedo: Color::zero(),
+            }),
         };
 
         if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
-            let direction = rec.normal + Vec3::random_on_hemisphere(&rec.normal);
-            let ray = Ray {
+            let mut ray_scattered = Ray {
                 orig: rec.p,
-                dir: direction,
+                dir: rec.normal + Vec3::random_unit_vector(),
             };
-            return 0.5 * self.ray_color(&ray, depth - 1, world);
+            let mut attenuation = Color::zero();
+            if rec
+                .mat
+                .scatter(r, &rec, &mut attenuation, &mut ray_scattered)
+            {
+                return attenuation * self.ray_color(&ray_scattered, depth - 1, world);
+            }
+            return Color::zero();
         }
 
         let unit_direction = r.direction().unit_vector();

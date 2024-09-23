@@ -3,14 +3,48 @@ mod ray_tracer;
 
 use std::sync::Arc;
 
-use math::vec3::Point3;
-use ray_tracer::{camera::Camera, hittable_list::HittableList, primitives::sphere::Sphere};
+use math::vec3::{Color, Point3};
+use ray_tracer::materials::lambertian::Lambertian;
+use ray_tracer::materials::metal::Metal;
+use ray_tracer::primitives::sphere::Sphere;
+use ray_tracer::{camera::Camera, hittable_list::HittableList};
 
 fn main() {
     let mut world = HittableList::new();
 
-    world.add(Arc::new(Sphere::new(Point3::new(0., 0., -1.), 0.5)));
-    world.add(Arc::new(Sphere::new(Point3::new(0., -100.5, -1.), 100.)));
+    let material_ground = Arc::new(Lambertian {
+        albedo: Color::new(0.8, 0.8, 0.0),
+    });
+    let material_center = Arc::new(Lambertian {
+        albedo: Color::new(0.1, 0.2, 0.5),
+    });
+    let material_left = Arc::new(Metal {
+        albedo: Color::new(0.8, 0.8, 0.8),
+    });
+    let material_right = Arc::new(Metal {
+        albedo: Color::new(0.8, 0.6, 0.2),
+    });
+
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 0.0, -1.2),
+        0.5,
+        material_center,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left,
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right,
+    )));
 
     let mut camera = Camera::new();
     camera.aspect_ratio = 16.0 / 9.0;
