@@ -1,4 +1,5 @@
 use crate::math::{
+    circle::degrees_to_radians,
     constants::INFINITY,
     interval::Interval,
     max::max_u32,
@@ -20,6 +21,7 @@ pub struct CameraConfig {
     pub image_width: u32,
     pub samples_per_pixel: u32,
     pub max_depth: u32,
+    pub vfov_in_degrees: f64,
 }
 
 pub struct Camera {
@@ -67,15 +69,6 @@ impl Camera {
         }
     }
 
-    pub fn new() -> Self {
-        Camera::new_with_config(CameraConfig {
-            aspect_ratio: 16.0 / 9.0,
-            image_width: 400,
-            samples_per_pixel: 100,
-            max_depth: 50,
-        })
-    }
-
     pub fn initialize(&mut self) {
         // Calculate the image height, and ensure that it's at least 1.
         self.image_height = max_u32(
@@ -89,7 +82,10 @@ impl Camera {
 
         // Determine viewport dimensions.
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let theta = degrees_to_radians(self.config.vfov_in_degrees);
+        let h = f64::tan(theta / 2.0);
+    
+        let viewport_height = 2. * h * focal_length;
         let viewport_width =
             viewport_height * ((self.config.image_width as f64) / (self.image_height as f64));
 

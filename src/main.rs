@@ -62,6 +62,7 @@ fn main() {
         image_width: 400,
         samples_per_pixel: 100,
         max_depth: 50,
+        vfov_in_degrees: 90.0,
     });
 
     camera.render(&world);
