@@ -2,6 +2,9 @@ use std::fmt;
 use std::io::Write;
 use std::ops::{Add, Div, Mul, Sub};
 
+use super::interval::Interval;
+use super::random::{random_f64, random_f64_in_interval};
+
 #[derive(Clone, Copy)]
 pub struct Vec3 {
     x: f64,
@@ -55,6 +58,80 @@ impl Vec3 {
             self.x * other.y - self.y * other.x,
         )
     }
+
+    pub fn random() -> Self {
+        Vec3::new(random_f64(), random_f64(), random_f64())
+    }
+
+    pub fn inverted(&self) -> Self {
+        Vec3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+
+    pub fn random_interval(interval: Interval) -> Self {
+        Vec3::new(
+            random_f64_in_interval(&interval),
+            random_f64_in_interval(&interval),
+            random_f64_in_interval(&interval),
+        )
+    }
+
+    pub fn random_unit_vector() -> Self {
+        loop {
+            let p = Vec3::random_interval(Interval::new(-1.0, 1.0));
+            let lensq = p.length_squared();
+            // Use a more practical threshold to avoid floating-point precision issues
+            if lensq > 1e-8 && lensq <= 1.0 {
+                return p / lensq.sqrt(); // Normalize the vector to length 1
+            }
+        }
+    }
+
+    pub fn random_on_hemisphere(normal: &Vec3) -> Self {
+        let on_unit_sphere = Vec3::random_unit_vector();
+        if on_unit_sphere.dot(normal) > 0.0 {
+            on_unit_sphere
+        } else {
+            on_unit_sphere.inverted()
+        }
+    }
+
+    // pub fn random_unit_vector() -> Option<Self> {
+    //     // Try 100 times to get a random unit vector
+    //     for _ in 0..1000 {
+    //         let p = Vec3::random_interval(Interval::new(-1.0, 1.0));
+    //         let lensq = p.length_squared();
+    //         // If the length is between 0 and 1, return the unit vector
+    //         // Prevent p from being the zero vector
+    //         if lensq < 1.0 && 1e-160 < lensq {
+    //             return Some(p.unit_vector());
+    //         }
+    //     }
+    //     eprintln!("Vec3::random_unit_vector() failed to find a unit vector");
+    //     None
+    // }
+
+    // pub fn random_unit_vector_on_hemisphere(normal: &Vec3) -> Self {
+    //     let on_unit_sphere = Vec3::random_unit_vector();
+    //     match on_unit_sphere {
+    //         Some(v) => {
+    //             if v.dot(normal) > 0.0 {
+    //                 v
+    //             } else {
+    //                 0. - v
+    //             }
+    //         }
+    //         None => normal.unit_vector(),
+    //     }
+    //     // if on_unit_sphere.dot(normal) > 0.0 {
+    //     //     on_unit_sphere
+    //     // } else {
+    //     //     0. - on_unit_sphere
+    //     // }
+    // }
 }
 
 // Add

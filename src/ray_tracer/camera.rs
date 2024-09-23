@@ -17,6 +17,7 @@ pub struct Camera {
     pub aspect_ratio: f64,
     pub image_width: i32,
     pub samples_per_pixel: i32,
+    pub max_depth: i32,
 
     image_height: i32,
     center: Point3,
@@ -38,17 +39,8 @@ impl Camera {
                 let mut pixel_color = Color::zero();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.ray_color(&ray, world);
+                    pixel_color = pixel_color + self.ray_color(&ray, self.max_depth, world);
                 }
-
-                // let pixel_center = self.pixel00_loc
-                //     + ((i as f64) * self.pixel_delta_u)
-                //     + ((j as f64) * self.pixel_delta_v);
-                // let ray_direction = pixel_center - self.center;
-                // let r = Ray::new(self.center, ray_direction);
-
-                // let pixel_color = self.ray_color(&r, world);
-
                 let _ = write_color(&mut stdout(), self.pixel_samples_scale * pixel_color);
             }
         }
@@ -66,6 +58,7 @@ impl Camera {
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
             pixel_samples_scale: 1.0 / 10.,
+            max_depth: 10,
         }
     }
 
@@ -108,7 +101,10 @@ impl Camera {
         let ray_origin = self.center;
         let ray_direction = pixel_sample - self.center;
 
-        return Ray::new(ray_origin, ray_direction);
+        Ray {
+            orig: ray_origin,
+            dir: ray_direction,
+        }
     }
 
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
@@ -116,7 +112,12 @@ impl Camera {
         Vec3::new(random_f64() - 0.5, random_f64() - 0.5, 0.)
     }
 
-    fn ray_color(&self, r: &Ray, world: &(dyn Hittable)) -> Color {
+    fn ray_color(&self, r: &Ray, depth: i32, world: &(dyn Hittable)) -> Color {
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if depth <= 0 {
+            return Color::zero();
+        }
+
         let mut rec: HitRecord = HitRecord {
             t: 0.,
             p: Point3::zero(),
@@ -124,8 +125,13 @@ impl Camera {
             front_face: false,
         };
 
-        if world.hit(r, Interval::new(0., INFINITY), &mut rec) {
-            return 0.5 * (rec.normal + Color::one());
+        if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
+            let direction = rec.normal + Vec3::random_on_hemisphere(&rec.normal);
+            let ray = Ray {
+                orig: rec.p,
+                dir: direction,
+            };
+            return 0.5 * self.ray_color(&ray, depth - 1, world);
         }
 
         let unit_direction = r.direction().unit_vector();
@@ -137,9 +143,14 @@ impl Camera {
 const INTENSITY: Interval = Interval { min: 0.0, max: 1.0 };
 
 pub fn write_color<W: Write>(out: &mut W, pixel_color: Color) -> io::Result<()> {
-    let r = pixel_color.x();
-    let g = pixel_color.y();
-    let b = pixel_color.z();
+    let mut r = pixel_color.x();
+    let mut g = pixel_color.y();
+    let mut b = pixel_color.z();
+
+    // Apply a linear to gamma transform for gamma 2
+    r = linear_to_gamma_corrected(r);
+    g = linear_to_gamma_corrected(g);
+    b = linear_to_gamma_corrected(b);
 
     // Translate the [0,1] component values to the byte range [0,255].
     let rbyte = (256. * INTENSITY.clamp(r)) as i32;
@@ -148,4 +159,12 @@ pub fn write_color<W: Write>(out: &mut W, pixel_color: Color) -> io::Result<()> 
 
     // Write out the pixel color components.
     writeln!(out, "{} {} {}", rbyte, gbyte, bbyte)
+}
+
+pub fn linear_to_gamma_corrected(linear_component: f64) -> f64 {
+    if linear_component > 0. {
+        return linear_component.sqrt();
+    }
+
+    return 0.;
 }
