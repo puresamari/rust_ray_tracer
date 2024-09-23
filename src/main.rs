@@ -60,9 +60,12 @@ fn main() {
     let mut camera = Camera::new_with_config(CameraConfig {
         aspect_ratio: 16.0 / 9.0,
         image_width: 400,
-        samples_per_pixel: 100,
+        samples_per_pixel: 32,
         max_depth: 50,
-        vfov_in_degrees: 90.0,
+        vfov_in_degrees: 20.0,
+        lookfrom: Point3::new(-2., 2., 1.),
+        lookat: Point3::new(0.0, 0.0, -1.0),
+        vup: Point3::new(0.0, 1.0, 0.0),
     });
 
     camera.render(&world);

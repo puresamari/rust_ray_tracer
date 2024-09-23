@@ -42,7 +42,13 @@ impl Vec3 {
 
     // Unit vector
     pub fn unit_vector(&self) -> Vec3 {
-        *self / self.length()
+        let length = self.length();
+        if length == 0.0 {
+            // Handle zero-length vector appropriately
+            Vec3::new(0.0, 0.0, 0.0) // Or you could panic! or return an Option<Vec3>
+        } else {
+            *self / length
+        }
     }
 
     // Dot product
