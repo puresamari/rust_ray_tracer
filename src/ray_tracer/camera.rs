@@ -6,7 +6,7 @@ use crate::math::{
     random::random_f64,
     vec3::{Color, Point3, Vec3},
 };
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::io::{self, Write};
 use std::{io::stdout, sync::Arc};
 
