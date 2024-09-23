@@ -1,10 +1,11 @@
 use crate::{
-    math::vec3::Color,
+    math::vec3::{Color, Vec3},
     ray_tracer::{hittable::HitRecord, material::Material, ray::Ray},
 };
 
 pub struct Metal {
     pub albedo: Color,
+    pub fuzz: f64,
 }
 
 impl Material for Metal {
@@ -15,12 +16,13 @@ impl Material for Metal {
         attenuation: &mut Color,
         ray_scattered: &mut Ray,
     ) -> bool {
-        let reflected = r_in.direction().reflect(&hit_record.normal);
+        let mut reflected = r_in.direction().reflect(&hit_record.normal);
+        reflected = reflected.unit_vector() + (self.fuzz * Vec3::random_unit_vector());
         *ray_scattered = Ray {
             orig: hit_record.p,
             dir: reflected,
         };
         *attenuation = self.albedo;
-        true
+        return ray_scattered.direction().dot(&hit_record.normal) > 0.;
     }
 }
