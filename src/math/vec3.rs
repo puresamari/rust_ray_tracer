@@ -3,7 +3,7 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use super::interval::Interval;
 use super::min::min_f64;
-use super::random::{random_f64, random_f64_in_interval};
+use super::random::random_f64;
 
 #[derive(Clone, Copy)]
 pub struct Vec3 {
@@ -78,11 +78,7 @@ impl Vec3 {
     }
 
     pub fn random_interval(interval: Interval) -> Self {
-        Vec3::new(
-            random_f64_in_interval(&interval),
-            random_f64_in_interval(&interval),
-            random_f64_in_interval(&interval),
-        )
+        Vec3::new(interval.random(), interval.random(), interval.random())
     }
 
     pub fn random_unit_vector() -> Self {
@@ -92,6 +88,16 @@ impl Vec3 {
             // Use a more practical threshold to avoid floating-point precision issues
             if lensq > 1e-8 && lensq <= 1.0 {
                 return p / lensq.sqrt(); // Normalize the vector to length 1
+            }
+        }
+    }
+
+    pub fn random_in_unit_disk() -> Self {
+        loop {
+            let interval = Interval::new(-1.0, 1.0);
+            let p = Vec3::new(interval.random(), interval.random(), 0.0);
+            if p.length_squared() < 1.0 {
+                return p;
             }
         }
     }

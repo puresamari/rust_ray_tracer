@@ -1,4 +1,4 @@
-use super::{max::max_f64, min::min_f64};
+use super::{max::max_f64, min::min_f64, random::random_f64};
 
 pub struct Interval {
     pub min: f64,
@@ -81,5 +81,9 @@ impl Interval {
         } else {
             x
         }
+    }
+
+    pub fn random(&self) -> f64 {
+        self.min + (self.max - self.min) * random_f64()
     }
 }
