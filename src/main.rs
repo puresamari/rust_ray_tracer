@@ -1,5 +1,6 @@
 mod math;
 mod ray_tracer;
+mod scene;
 
 use std::sync::Arc;
 
@@ -7,19 +8,36 @@ use math::interval::Interval;
 use math::random::random_f64;
 use math::vec3::{Color, Point3};
 use ray_tracer::camera::CameraConfig;
+use ray_tracer::hittable_list::HittableList;
 use ray_tracer::materials::dialectric::Dialectric;
 use ray_tracer::materials::lambertian::Lambertian;
 use ray_tracer::materials::metal::Metal;
 use ray_tracer::primitives::sphere::Sphere;
-use ray_tracer::{camera::Camera, hittable_list::HittableList};
+use scene::scene::Scene;
 
-fn main() {
-    let mut world = HittableList::new();
+fn create_example_scene() -> Scene {
+    let mut scene = Scene::new(
+        HittableList::new(),
+        CameraConfig {
+            aspect_ratio: 16.0 / 9.0,
+            image_width: 400,
+            samples_per_pixel: 32,
+            max_depth: 50,
+
+            vfov_in_degrees: 20.0,
+            lookfrom: Point3::new(13., 2., 3.),
+            lookat: Point3::new(0., 0., 0.),
+            vup: Point3::new(0.0, 1.0, 0.0),
+
+            defocus_angle_in_degrees: 0.6,
+            focus_dist: 10.,
+        },
+    );
 
     let ground_material = Arc::new(Lambertian {
         albedo: Color::new(0.5, 0.5, 0.5),
     });
-    world.add(Arc::new(Sphere::new(
+    scene.world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         ground_material,
@@ -50,7 +68,7 @@ fn main() {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Arc::new(Lambertian { albedo });
-                    world.add(Arc::new(Sphere::new_with_movement(
+                    scene.world.add(Arc::new(Sphere::new_with_movement(
                         center,
                         center1,
                         0.2,
@@ -61,7 +79,7 @@ fn main() {
                     let albedo = Color::random_interval(Interval::new(0.5, 1.0));
                     let fuzz = Interval::new(0.0, 0.5).random();
                     let sphere_material = Arc::new(Metal { albedo, fuzz });
-                    world.add(Arc::new(Sphere::new_with_movement(
+                    scene.world.add(Arc::new(Sphere::new_with_movement(
                         center,
                         center1,
                         0.2,
@@ -76,13 +94,13 @@ fn main() {
                         refraction_index: 1. / glass_outer_mat.refraction_index,
                     });
 
-                    world.add(Arc::new(Sphere::new_with_movement(
+                    scene.world.add(Arc::new(Sphere::new_with_movement(
                         center,
                         center1,
                         0.2,
                         glass_outer_mat,
                     )));
-                    world.add(Arc::new(Sphere::new_with_movement(
+                    scene.world.add(Arc::new(Sphere::new_with_movement(
                         center,
                         center1,
                         0.1,
@@ -99,12 +117,12 @@ fn main() {
     let material1_inner = Arc::new(Dialectric {
         refraction_index: 1. / material1.refraction_index,
     });
-    world.add(Arc::new(Sphere::new(
+    scene.world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
-    world.add(Arc::new(Sphere::new(
+    scene.world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         0.9,
         material1_inner,
@@ -113,7 +131,7 @@ fn main() {
     let material2 = Arc::new(Lambertian {
         albedo: Color::new(0.4, 0.2, 0.1),
     });
-    world.add(Arc::new(Sphere::new(
+    scene.world.add(Arc::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
@@ -123,26 +141,16 @@ fn main() {
         albedo: Color::new(0.7, 0.6, 0.5),
         fuzz: 0.0,
     });
-    world.add(Arc::new(Sphere::new(
+    scene.world.add(Arc::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
         material3,
     )));
 
-    let mut camera = Camera::new_with_config(CameraConfig {
-        aspect_ratio: 16.0 / 9.0,
-        image_width: 400,
-        samples_per_pixel: 1000,
-        max_depth: 50,
+    return scene;
+}
 
-        vfov_in_degrees: 20.0,
-        lookfrom: Point3::new(13., 2., 3.),
-        lookat: Point3::new(0., 0., 0.),
-        vup: Point3::new(0.0, 1.0, 0.0),
-
-        defocus_angle_in_degrees: 0.6,
-        focus_dist: 10.,
-    });
-
-    camera.render(&world);
+fn main() {
+    let mut scene = create_example_scene();
+    scene.render();
 }
