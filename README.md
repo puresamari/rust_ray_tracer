@@ -4,4 +4,5 @@
 Dynamically renders a lot of different objects
 
 ![Rendered result](/example_scenes/lots_of_objects/output/frame-0.png)
-![Rendered movie](/example_scenes/lots_of_objects/output/video.mp4)
+
+![Rendered movie](/example_scenes/lots_of_objects/output/video.gif)
