@@ -15,14 +15,6 @@ impl HittableList {
         }
     }
 
-    pub fn new_with_objects(objects: Vec<Arc<dyn Hittable>>) -> Self {
-        Self { objects }
-    }
-
-    pub fn clear(&mut self) {
-        self.objects.clear();
-    }
-
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object);
     }

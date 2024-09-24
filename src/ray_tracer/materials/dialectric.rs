@@ -39,7 +39,8 @@ impl Material for Dialectric {
 
         let cannot_refract = ri * sin_theta > 1.0;
 
-        let direction = if cannot_refract || Dialectric::reflactance(cos_theta, ri) > rand::random() {
+        let direction = if cannot_refract || Dialectric::reflactance(cos_theta, ri) > rand::random()
+        {
             unit_direction.reflect(&hit_record.normal)
         } else {
             unit_direction.refract(&hit_record.normal, ri)
@@ -47,10 +48,7 @@ impl Material for Dialectric {
 
         // let refracted = unit_direction.refract(&hit_record.normal, ri);
 
-        *ray_scattered = Ray {
-            orig: hit_record.p,
-            dir: direction,
-        };
+        *ray_scattered = Ray::new_with_time(hit_record.p, direction, r_in.time());
         return true;
     }
 }

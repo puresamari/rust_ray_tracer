@@ -4,6 +4,7 @@ mod ray_tracer;
 use std::sync::Arc;
 
 use math::interval::Interval;
+use math::random::random_f64;
 use math::vec3::{Color, Point3};
 use ray_tracer::camera::CameraConfig;
 use ray_tracer::materials::dialectric::Dialectric;
@@ -26,12 +27,22 @@ fn main() {
 
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = math::random::random_f64();
+            let choose_mat = random_f64();
             let center = Point3::new(
-                a as f64 + 0.9 * math::random::random_f64(),
+                a as f64 + 0.9 * random_f64(),
                 0.2,
-                b as f64 + 0.9 * math::random::random_f64(),
+                b as f64 + 0.9 * random_f64(),
             );
+            let mut center1 = center;
+            if random_f64() < 0.7 {
+                let max_movement = Interval::new(0.0, 0.5);
+                center1 = center
+                    + Point3::new(
+                        max_movement.random(),
+                        max_movement.random(),
+                        max_movement.random(),
+                    );
+            }
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 // let sphere_material: Arc<dyn ray_tracer::materials::Material>;
@@ -39,13 +50,23 @@ fn main() {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Arc::new(Lambertian { albedo });
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new_with_movement(
+                        center,
+                        center1,
+                        0.2,
+                        sphere_material,
+                    )));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_interval(Interval::new(0.5, 1.0));
                     let fuzz = Interval::new(0.0, 0.5).random();
                     let sphere_material = Arc::new(Metal { albedo, fuzz });
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new_with_movement(
+                        center,
+                        center1,
+                        0.2,
+                        sphere_material,
+                    )));
                 } else {
                     // glass
                     let glass_outer_mat = Arc::new(Dialectric {
@@ -55,8 +76,18 @@ fn main() {
                         refraction_index: 1. / glass_outer_mat.refraction_index,
                     });
 
-                    world.add(Arc::new(Sphere::new(center, 0.2, glass_outer_mat)));
-                    world.add(Arc::new(Sphere::new(center, 0.1, glass_inner_mat)));
+                    world.add(Arc::new(Sphere::new_with_movement(
+                        center,
+                        center1,
+                        0.2,
+                        glass_outer_mat,
+                    )));
+                    world.add(Arc::new(Sphere::new_with_movement(
+                        center,
+                        center1,
+                        0.1,
+                        glass_inner_mat,
+                    )));
                 }
             }
         }
@@ -101,7 +132,7 @@ fn main() {
     let mut camera = Camera::new_with_config(CameraConfig {
         aspect_ratio: 16.0 / 9.0,
         image_width: 400,
-        samples_per_pixel: 16,
+        samples_per_pixel: 1000,
         max_depth: 50,
 
         vfov_in_degrees: 20.0,

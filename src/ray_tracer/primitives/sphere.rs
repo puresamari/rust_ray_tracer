@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub struct Sphere {
-    center: Point3,
+    center: Ray,
     radius: f64,
 
     mat: Arc<dyn Material>,
@@ -22,6 +22,20 @@ pub struct Sphere {
 
 impl Sphere {
     pub fn new(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Self {
+        Sphere {
+            center: Ray::new(center, Vec3::zero()),
+            radius: max_f64(radius, 0.),
+            mat,
+        }
+    }
+
+    pub fn new_with_movement(
+        center0: Point3,
+        center1: Point3,
+        radius: f64,
+        mat: Arc<dyn Material>,
+    ) -> Self {
+        let center = Ray::new(center0, center1 - center0);
         Sphere {
             center,
             radius: max_f64(radius, 0.),
@@ -32,7 +46,8 @@ impl Sphere {
 
 impl Hittable for Sphere {
     fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
-        let oc = self.center - r.origin();
+        let current_center = self.center.at(r.time());
+        let oc = current_center - r.origin();
         let a = r.direction().length_squared();
         let h = Vec3::dot(&r.direction(), &oc);
         let c = oc.length_squared() - self.radius * self.radius;
@@ -56,8 +71,7 @@ impl Hittable for Sphere {
 
         rec.t = root;
         rec.p = r.at(rec.t);
-        rec.normal = (rec.p - self.center) / self.radius;
-        let outward_normal = (rec.p - self.center) / self.radius;
+        let outward_normal = (rec.p - current_center) / self.radius;
         rec.set_face_normal(r, outward_normal);
         rec.mat = Arc::clone(&self.mat);
 

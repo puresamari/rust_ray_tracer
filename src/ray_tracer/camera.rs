@@ -151,11 +151,9 @@ impl Camera {
             self.defocus_disc_sample()
         };
         let ray_direction = pixel_sample - ray_origin;
+        let ray_time = random_f64();
 
-        Ray {
-            orig: ray_origin,
-            dir: ray_direction,
-        }
+        Ray::new_with_time(ray_origin, ray_direction, ray_time)
     }
 
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
@@ -187,10 +185,7 @@ impl Camera {
         };
 
         if world.hit(r, Interval::new(0.001, INFINITY), &mut rec) {
-            let mut ray_scattered = Ray {
-                orig: rec.p,
-                dir: rec.normal + Vec3::random_unit_vector(),
-            };
+            let mut ray_scattered = Ray::new(rec.p, rec.normal + Vec3::random_unit_vector());
             let mut attenuation = Color::zero();
             if rec
                 .mat
