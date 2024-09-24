@@ -7,12 +7,19 @@ use crate::math::{
     vec3::{Color, Point3, Vec3},
 };
 use image::Rgb;
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
+use std::{sync::Arc, thread};
 
 extern crate image;
 
 use super::{
-    hittable::hittable::{HitRecord, Hittable},
+    animation::AnimationContext,
+    hittable::{
+        hittable::{HitRecord, Hittable},
+        hittable_list::HittableList,
+        object::HittableObject,
+    },
     material::{lambertian::Lambertian, material::Material, object::MaterialObject},
     ray::Ray,
 };
@@ -29,6 +36,7 @@ pub struct CameraConfig {
     pub lookfrom: Point3,
     pub lookat: Point3,
     pub vup: Vec3,
+    pub animation_meta: AnimationContext,
 
     /// Variation angle of rays through each pixel
     pub defocus_angle_in_degrees: f64,
@@ -55,34 +63,39 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn render(&mut self, world: &(dyn Hittable), out_path: String) {
+    pub fn image_height(&self) -> u32 {
+        self.image_height
+    }
+
+    pub fn render_frame(&mut self, world: Arc<HittableList>, frame: u32) -> Vec<[u8; 3]> {
         self.initialize();
 
         let bar =
             ProgressBar::new((self.image_height as u64) * (self.config.image_width as u64) + 1);
 
-        let mut imgbuf = image::ImageBuffer::new(self.config.image_width, self.image_height);
+        let pixel_count = self.config.image_width as usize * self.image_height as usize;
 
-        for (i, j, pixel) in imgbuf.enumerate_pixels_mut() {
-            let mut pixel_color = Color::zero();
-            for _ in 0..self.config.samples_per_pixel {
-                let ray = self.get_ray(i, j);
-                pixel_color = pixel_color + self.ray_color(&ray, self.config.max_depth, world);
-            }
-            *pixel = (self.pixel_samples_scale * pixel_color).to_pixel();
-            bar.inc(1);
-        }
+        // Create a parallel iterator over the pixels
+        let pixels = (0..pixel_count)
+            .into_par_iter() // Parallel iterator over pixel indices
+            .map(|idx| {
+                let i = idx % self.config.image_width as usize; // Calculate x position
+                let j = idx / self.config.image_width as usize; // Calculate y position
 
-        // if path doesn't exist, create it
-        if !std::path::Path::new(out_path.clone().as_str()).exists() {
-            std::fs::create_dir_all(out_path.clone()).unwrap();
-        }
+                let mut pixel_color = Color::zero();
+                for _ in 0..self.config.samples_per_pixel {
+                    let ray = self.get_ray(i, j, frame);
+                    pixel_color = pixel_color + self.ray_color(&ray, self.config.max_depth, &world);
+                }
+                let pixel = (self.pixel_samples_scale * pixel_color).to_pixel();
+                bar.inc(1);
+                return pixel;
+            })
+            .collect();
 
-        let imate_path = format!("{}/image.png", out_path.clone());
-
-        imgbuf.save(imate_path).unwrap();
-        bar.inc(1);
         bar.finish();
+
+        return pixels;
     }
 
     pub fn new_with_config(config: CameraConfig) -> Self {
@@ -148,7 +161,7 @@ impl Camera {
 
     // Construct a camera ray originating from the defocus disk and directed at a randomly
     // sampled point around the pixel location i, j.
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
+    fn get_ray(&self, i: usize, j: usize, frame: u32) -> Ray {
         let offset = self.sample_square();
         let pixel_sample = self.pixel00_loc
             + (((i as f64) + offset.x()) * self.pixel_delta_u)
@@ -160,7 +173,12 @@ impl Camera {
             self.defocus_disc_sample()
         };
         let ray_direction = pixel_sample - ray_origin;
-        let ray_time = random_f64();
+        let time_at_frame = self.config.animation_meta.time_at_frame(frame);
+        let ray_time_interval = Interval {
+            min: time_at_frame,
+            max: time_at_frame + self.config.animation_meta.shutter_speed,
+        };
+        let ray_time = ray_time_interval.random();
 
         Ray::new_with_time(ray_origin, ray_direction, ray_time)
     }
@@ -177,7 +195,7 @@ impl Camera {
         return self.center + (p.x() * self.defocus_disk_u) + (p.y() * self.defocus_disk_v);
     }
 
-    fn ray_color(&self, r: &Ray, depth: u32, world: &(dyn Hittable)) -> Color {
+    fn ray_color(&self, r: &Ray, depth: u32, world: &HittableList) -> Color {
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if depth <= 0 {
             return Color::zero();
@@ -214,7 +232,7 @@ impl Camera {
 const INTENSITY: Interval = Interval { min: 0.0, max: 1.0 };
 
 impl Color {
-    pub fn to_pixel(&self) -> Rgb<u8> {
+    pub fn to_pixel(&self) -> [u8; 3] {
         let mut r = self.x();
         let mut g = self.y();
         let mut b = self.z();
@@ -229,7 +247,7 @@ impl Color {
         let gbyte = (256. * INTENSITY.clamp(g)) as u8;
         let bbyte = (256. * INTENSITY.clamp(b)) as u8;
 
-        return Rgb([rbyte, gbyte, bbyte]);
+        return [rbyte, gbyte, bbyte];
     }
 }
 

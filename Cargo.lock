@@ -799,6 +799,7 @@ dependencies = [
  "image",
  "indicatif",
  "rand",
+ "rayon",
  "serde",
  "toml",
 ]
