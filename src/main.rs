@@ -47,7 +47,7 @@ impl Command {
                 return Ok(Command::Render(scene_file, render_type));
             }
             "editor" => {
-                if args.len() != 2 {
+                if args.len() != 3 {
                     panic!("Please provide a scene file.");
                 }
 
