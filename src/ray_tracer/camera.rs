@@ -55,7 +55,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn render(&mut self, world: &(dyn Hittable)) {
+    pub fn render(&mut self, world: &(dyn Hittable), out_path: String) {
         self.initialize();
 
         let bar =
@@ -73,7 +73,14 @@ impl Camera {
             bar.inc(1);
         }
 
-        imgbuf.save("image.png").unwrap();
+        // if path doesn't exist, create it
+        if !std::path::Path::new(out_path.clone().as_str()).exists() {
+            std::fs::create_dir_all(out_path.clone()).unwrap();
+        }
+
+        let imate_path = format!("{}/image.png", out_path.clone());
+
+        imgbuf.save(imate_path).unwrap();
         bar.inc(1);
         bar.finish();
     }

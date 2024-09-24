@@ -19,6 +19,7 @@ use crate::ray_tracer::material::object::MaterialObject;
 pub struct Scene {
     pub world: HittableList,
     camera: Camera,
+    directory: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -30,10 +31,11 @@ struct SceneConfig {
 pub const SCENE_FILE_EXTENSION: &str = ".rrtscene";
 
 impl Scene {
-    pub fn new(world: HittableList, config: CameraConfig) -> Self {
+    pub fn new(world: HittableList, config: CameraConfig, directory: String) -> Self {
         Self {
             world,
             camera: Camera::new_with_config(config),
+            directory,
         }
     }
 
@@ -51,33 +53,48 @@ impl Scene {
             world: self.world.clone(),
         };
 
+        // create path if it doesn't exist
+        let parent = std::path::Path::new(path).parent().unwrap();
+        fs::create_dir_all(parent).unwrap();
+
         fs::write(path, toml::to_string(&config).unwrap()).unwrap();
     }
 
-    pub fn load_config(path: &str) -> Self {
+    pub fn load_config(scene_file_path: &str) -> Self {
         // Check if the file extension is .toml
-        if !path.ends_with(SCENE_FILE_EXTENSION) {
+        if !scene_file_path.ends_with(SCENE_FILE_EXTENSION) {
             panic!("The file extension must be .toml");
         }
 
-        if !fs::metadata(path).is_ok() {
+        let directory = std::path::Path::new(scene_file_path)
+            .parent()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        if !fs::metadata(scene_file_path).is_ok() {
             println!("File not found. Creating example scene.");
-            return Self::create_example_scene();
+            return Self::create_example_scene(directory);
         }
 
-        let config: SceneConfig = toml::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        let config: SceneConfig =
+            toml::from_str(&fs::read_to_string(scene_file_path).unwrap()).unwrap();
 
         Self {
             world: config.world,
             camera: Camera::new_with_config(config.camera),
+            directory,
         }
     }
 
     pub fn render(&mut self) {
-        self.camera.render(&self.world);
+        // Output path, scene path + output
+        let output_path = self.directory.clone() + "/output";
+        self.camera.render(&self.world, output_path);
     }
 
-    fn create_example_scene() -> Scene {
+    fn create_example_scene(directory: String) -> Scene {
         let mut scene = Scene::new(
             HittableList::new(),
             CameraConfig {
@@ -94,6 +111,7 @@ impl Scene {
                 defocus_angle_in_degrees: 0.6,
                 focus_dist: 10.,
             },
+            directory,
         );
 
         let ground_material = MaterialObject::Lambertian(Lambertian {
