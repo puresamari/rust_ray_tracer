@@ -1,4 +1,4 @@
 # Build for release
 cargo build -r
 
-./target/release/raytracer editor example_scenes/lots_of_objects/scene.rrtscene
+./target/release/cli editor examples/scenes/lots_of_objects/scene.rrtscene

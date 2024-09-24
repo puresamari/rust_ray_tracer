@@ -1,8 +1,8 @@
 # Examples
 
-### [Lots of objects](/example_scenes/lots_of_objects/)
+### [Lots of objects](/examples/scenes/lots_of_objects/)
 Dynamically renders a lot of different objects
 
-![Rendered result](/example_scenes/lots_of_objects/output/frame-0.png)
+![Rendered result](/examples/scenes/lots_of_objects/output/frame-0.png)
 
-![Rendered movie](/example_scenes/lots_of_objects/output/video.gif)
+![Rendered movie](/examples/scenes/lots_of_objects/output/video.gif)
