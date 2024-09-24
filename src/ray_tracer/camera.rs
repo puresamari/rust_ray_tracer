@@ -6,9 +6,10 @@ use crate::math::{
     random::random_f64,
     vec3::{Color, Point3, Vec3},
 };
-use indicatif::{ProgressBar, ProgressStyle};
-use std::io::{self, Write};
-use std::{io::stdout, sync::Arc};
+use image::Rgb;
+use indicatif::ProgressBar;
+use std::sync::Arc;
+extern crate image;
 
 use super::{
     hittable::{HitRecord, Hittable},
@@ -55,21 +56,23 @@ impl Camera {
     pub fn render(&mut self, world: &(dyn Hittable)) {
         self.initialize();
 
-        let bar = ProgressBar::new((self.image_height as u64) * (self.config.image_width as u64));
+        let bar =
+            ProgressBar::new((self.image_height as u64) * (self.config.image_width as u64) + 1);
 
-        println!("P3\n{} {}\n255", self.config.image_width, self.image_height);
+        let mut imgbuf = image::ImageBuffer::new(self.config.image_width, self.image_height);
 
-        for j in 0..self.image_height {
-            for i in 0..self.config.image_width {
-                bar.inc(1);
-                let mut pixel_color = Color::zero();
-                for _ in 0..self.config.samples_per_pixel {
-                    let ray = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.ray_color(&ray, self.config.max_depth, world);
-                }
-                let _ = write_color(&mut stdout(), self.pixel_samples_scale * pixel_color);
+        for (i, j, pixel) in imgbuf.enumerate_pixels_mut() {
+            let mut pixel_color = Color::zero();
+            for _ in 0..self.config.samples_per_pixel {
+                let ray = self.get_ray(i, j);
+                pixel_color = pixel_color + self.ray_color(&ray, self.config.max_depth, world);
             }
+            *pixel = (self.pixel_samples_scale * pixel_color).to_pixel();
+            bar.inc(1);
         }
+
+        imgbuf.save("image.png").unwrap();
+        bar.inc(1);
         bar.finish();
     }
 
@@ -206,23 +209,24 @@ impl Camera {
 
 const INTENSITY: Interval = Interval { min: 0.0, max: 1.0 };
 
-pub fn write_color<W: Write>(out: &mut W, pixel_color: Color) -> io::Result<()> {
-    let mut r = pixel_color.x();
-    let mut g = pixel_color.y();
-    let mut b = pixel_color.z();
+impl Color {
+    pub fn to_pixel(&self) -> Rgb<u8> {
+        let mut r = self.x();
+        let mut g = self.y();
+        let mut b = self.z();
 
-    // Apply a linear to gamma transform for gamma 2
-    r = linear_to_gamma_corrected(r);
-    g = linear_to_gamma_corrected(g);
-    b = linear_to_gamma_corrected(b);
+        // Apply a linear to gamma transform for gamma 2
+        r = linear_to_gamma_corrected(r);
+        g = linear_to_gamma_corrected(g);
+        b = linear_to_gamma_corrected(b);
 
-    // Translate the [0,1] component values to the byte range [0,255].
-    let rbyte = (256. * INTENSITY.clamp(r)) as i32;
-    let gbyte = (256. * INTENSITY.clamp(g)) as i32;
-    let bbyte = (256. * INTENSITY.clamp(b)) as i32;
+        // Translate the [0,1] component values to the byte range [0,255].
+        let rbyte = (256. * INTENSITY.clamp(r)) as u8;
+        let gbyte = (256. * INTENSITY.clamp(g)) as u8;
+        let bbyte = (256. * INTENSITY.clamp(b)) as u8;
 
-    // Write out the pixel color components.
-    writeln!(out, "{} {} {}", rbyte, gbyte, bbyte)
+        return Rgb([rbyte, gbyte, bbyte]);
+    }
 }
 
 pub fn linear_to_gamma_corrected(linear_component: f64) -> f64 {

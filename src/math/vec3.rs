@@ -126,6 +126,10 @@ impl Vec3 {
         let r_out_parallel = (-f64::sqrt(f64::abs(1.0 - r_out_perp.length_squared()))) * *normal;
         return r_out_perp + r_out_parallel;
     }
+
+    pub fn to_array(&self) -> [f64; 3] {
+        [self.x, self.y, self.z]
+    }
 }
 
 // Add

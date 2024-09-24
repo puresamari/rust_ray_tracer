@@ -100,8 +100,8 @@ fn main() {
 
     let mut camera = Camera::new_with_config(CameraConfig {
         aspect_ratio: 16.0 / 9.0,
-        image_width: 1200,
-        samples_per_pixel: 100,
+        image_width: 400,
+        samples_per_pixel: 16,
         max_depth: 50,
 
         vfov_in_degrees: 20.0,
