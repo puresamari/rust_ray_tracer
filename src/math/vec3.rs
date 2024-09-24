@@ -4,8 +4,9 @@ use std::ops::{Add, Div, Mul, Sub};
 use super::interval::Interval;
 use super::min::min_f64;
 use super::random::random_f64;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct Vec3 {
     x: f64,
     y: f64,

@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::math::vec3::{Point3, Vec3};
 
 // Ray 𝐏(𝑡)=𝐀+𝑡𝐛
@@ -5,23 +7,24 @@ use crate::math::vec3::{Point3, Vec3};
 // A is the origin of the line
 // b is the direction of the line
 // t is a real number
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Ray {
-    pub orig: Point3,
-    pub dir: Vec3,
+    pub origin: Point3,
+    pub direction: Vec3,
 
     time: f64,
 }
 
 impl Ray {
     pub fn origin(&self) -> Point3 {
-        self.orig
+        self.origin
     }
     pub fn direction(&self) -> Vec3 {
-        self.dir
+        self.direction
     }
 
     pub fn at(&self, t: f64) -> Point3 {
-        self.orig + self.dir * t
+        self.origin + self.direction * t
     }
 
     pub fn time(&self) -> f64 {
@@ -34,8 +37,8 @@ impl Ray {
 
     pub fn new_with_time(origin: Point3, direction: Vec3, time: f64) -> Self {
         Self {
-            orig: origin,
-            dir: direction,
+            origin,
+            direction,
             time,
         }
     }

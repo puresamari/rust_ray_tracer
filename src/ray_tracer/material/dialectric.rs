@@ -1,8 +1,13 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     math::vec3::Color,
-    ray_tracer::{hittable::HitRecord, material::Material, ray::Ray},
+    ray_tracer::{hittable::hittable::HitRecord, ray::Ray},
 };
 
+use super::material::Material;
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Dialectric {
     // Refractive index in vacuum or air, or the ratio of the material's refractive index over
     // the refractive index of the enclosing media

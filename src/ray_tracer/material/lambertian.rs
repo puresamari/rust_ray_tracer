@@ -1,8 +1,13 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     math::vec3::{Color, Vec3},
-    ray_tracer::{hittable::HitRecord, material::Material, ray::Ray},
+    ray_tracer::{hittable::hittable::HitRecord, ray::Ray},
 };
 
+use super::material::Material;
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Lambertian {
     pub albedo: Color,
 }

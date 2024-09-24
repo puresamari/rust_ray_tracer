@@ -1,11 +1,15 @@
-use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 
-use crate::math::interval::Interval;
+use crate::{math::interval::Interval, ray_tracer::ray::Ray};
 
-use super::hittable::{HitRecord, Hittable};
+use super::{
+    hittable::{HitRecord, Hittable},
+    object::HittableObject,
+};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HittableList {
-    pub objects: Vec<Arc<dyn Hittable>>,
+    pub objects: Vec<HittableObject>,
 }
 
 impl HittableList {
@@ -15,18 +19,13 @@ impl HittableList {
         }
     }
 
-    pub fn add(&mut self, object: Arc<dyn Hittable>) {
+    pub fn add(&mut self, object: HittableObject) {
         self.objects.push(object);
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(
-        &self,
-        r: &crate::ray_tracer::ray::Ray,
-        ray_t: Interval,
-        rec: &mut crate::ray_tracer::hittable::HitRecord,
-    ) -> bool {
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         let temp_rec: Option<HitRecord> = None;
         let mut hit_anything = false;
         let mut closest_so_far = ray_t.max;

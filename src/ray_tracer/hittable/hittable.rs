@@ -1,14 +1,13 @@
-use std::sync::Arc;
-
-use crate::math::{interval::Interval, vec3::Vec3};
-
-use super::{material::Material, ray::Ray};
+use crate::{
+    math::{interval::Interval, vec3::Vec3},
+    ray_tracer::{material::object::MaterialObject, ray::Ray},
+};
 
 #[derive(Clone)]
 pub struct HitRecord {
     pub t: f64,
     pub p: Vec3,
-    pub mat: Arc<dyn Material>,
+    pub material: MaterialObject,
     pub normal: Vec3,
     pub front_face: bool,
 }

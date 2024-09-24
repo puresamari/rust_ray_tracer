@@ -799,6 +799,8 @@ dependencies = [
  "image",
  "indicatif",
  "rand",
+ "serde",
+ "toml",
 ]
 
 [[package]]

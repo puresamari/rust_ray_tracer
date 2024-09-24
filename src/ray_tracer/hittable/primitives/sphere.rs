@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     math::{
@@ -7,25 +7,26 @@ use crate::{
         vec3::{Point3, Vec3},
     },
     ray_tracer::{
-        hittable::{HitRecord, Hittable},
-        material::Material,
+        hittable::hittable::{HitRecord, Hittable},
+        material::object::MaterialObject,
         ray::Ray,
     },
 };
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Sphere {
     center: Ray,
     radius: f64,
 
-    mat: Arc<dyn Material>,
+    material: MaterialObject,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Self {
+    pub fn new(center: Point3, radius: f64, material: MaterialObject) -> Self {
         Sphere {
             center: Ray::new(center, Vec3::zero()),
             radius: max_f64(radius, 0.),
-            mat,
+            material,
         }
     }
 
@@ -33,13 +34,13 @@ impl Sphere {
         center0: Point3,
         center1: Point3,
         radius: f64,
-        mat: Arc<dyn Material>,
+        material: MaterialObject,
     ) -> Self {
         let center = Ray::new(center0, center1 - center0);
         Sphere {
             center,
             radius: max_f64(radius, 0.),
-            mat,
+            material,
         }
     }
 }
@@ -73,7 +74,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - current_center) / self.radius;
         rec.set_face_normal(r, outward_normal);
-        rec.mat = Arc::clone(&self.mat);
+        rec.material = self.material;
 
         return true;
     }

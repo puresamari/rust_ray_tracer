@@ -8,15 +8,17 @@ use crate::math::{
 };
 use image::Rgb;
 use indicatif::ProgressBar;
-use std::sync::Arc;
+
 extern crate image;
 
 use super::{
-    hittable::{HitRecord, Hittable},
-    materials::lambertian::Lambertian,
+    hittable::hittable::{HitRecord, Hittable},
+    material::{lambertian::Lambertian, material::Material, object::MaterialObject},
     ray::Ray,
 };
+use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize, Clone, Copy)]
 pub struct CameraConfig {
     pub aspect_ratio: f64,
     pub image_width: u32,
@@ -179,7 +181,7 @@ impl Camera {
             p: Point3::zero(),
             normal: Vec3::zero(),
             front_face: false,
-            mat: Arc::new(Lambertian {
+            material: MaterialObject::Lambertian(Lambertian {
                 albedo: Color::zero(),
             }),
         };
@@ -188,7 +190,7 @@ impl Camera {
             let mut ray_scattered = Ray::new(rec.p, rec.normal + Vec3::random_unit_vector());
             let mut attenuation = Color::zero();
             if rec
-                .mat
+                .material
                 .scatter(r, &rec, &mut attenuation, &mut ray_scattered)
             {
                 return attenuation * self.ray_color(&ray_scattered, depth - 1, world);
