@@ -20,6 +20,11 @@ use crate::ray_tracer::material::lambertian::Lambertian;
 use crate::ray_tracer::material::metal::Metal;
 use crate::ray_tracer::material::object::MaterialObject;
 
+pub enum RenderType {
+    SingleFrame(u32),
+    Animation(u32, u32),
+}
+
 pub struct Scene {
     pub world: HittableList,
     camera: Camera,
@@ -124,16 +129,21 @@ impl Scene {
         imgbuf.save(image_path).unwrap();
     }
 
-    pub fn render(&mut self) {
-        self.render_frame(0);
-    }
-
     pub fn render_animation(&mut self, start_frame: u32, frames: u32) {
         (start_frame..(start_frame + frames))
             .into_iter()
             .for_each(|frame| {
                 self.render_frame(frame);
             });
+    }
+
+    pub fn render(&mut self, render_type: RenderType) {
+        match render_type {
+            RenderType::SingleFrame(frame) => self.render_frame(frame),
+            RenderType::Animation(start_frame, frames) => {
+                self.render_animation(start_frame, frames)
+            }
+        }
     }
 
     fn create_example_scene(directory: String) -> Scene {
