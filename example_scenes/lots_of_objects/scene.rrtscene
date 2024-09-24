@@ -1,6 +1,6 @@
 [camera]
 aspect_ratio = 1.7777777777777777
-image_width = 400
+image_width = 1200
 samples_per_pixel = 32
 max_depth = 50
 vfov_in_degrees = 20.0
