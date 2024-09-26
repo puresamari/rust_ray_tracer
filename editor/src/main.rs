@@ -1,13 +1,9 @@
-use editor::Editor;
-use engine::scene::scene::Scene;
-
-pub mod editor;
-
-const EXAMPLE_SCENE_FILE: &str = "examples/scenes/with_editor/scene.rrtscene";
+use editor::editor_gui::EditorGUI;
+use iced::Font;
 
 fn main() {
-    let scene = Scene::load_config(EXAMPLE_SCENE_FILE);
-    let editor = Editor { scene };
-
-    editor.open();
+    let _ = iced::application("Editor - RRT", EditorGUI::update, EditorGUI::view)
+        .default_font(Font::MONOSPACE)
+        .centered()
+        .run_with(EditorGUI::new);
 }
