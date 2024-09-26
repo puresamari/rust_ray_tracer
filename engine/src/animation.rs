@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use math::vec3::Vec3;
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
 pub struct AnimationContext {
     pub frames_per_second: u32,
     pub shutter_speed: f64,

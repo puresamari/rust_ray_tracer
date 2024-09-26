@@ -5,5 +5,4 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-editor = { path = "../editor" }
 engine = { path = "../engine" }

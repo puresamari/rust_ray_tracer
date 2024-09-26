@@ -23,7 +23,7 @@ use super::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
 pub struct CameraConfig {
     pub aspect_ratio: f64,
     pub image_width: u32,
@@ -42,6 +42,7 @@ pub struct CameraConfig {
     pub focus_dist: f64,
 }
 
+#[derive(Debug, Clone)]
 pub struct Camera {
     pub config: CameraConfig,
 

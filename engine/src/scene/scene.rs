@@ -23,6 +23,7 @@ pub enum RenderType {
     Animation(u32, u32),
 }
 
+#[derive(Debug, Clone)]
 pub struct Scene {
     pub world: HittableList,
     camera: Camera,

@@ -1,4 +1,3 @@
-use editor::editor::Editor;
 use engine::scene::scene::{RenderType, Scene};
 use std::{env, fmt::Error};
 
@@ -73,10 +72,8 @@ fn main() {
                 scene.render(render_type);
                 scene.save_config(&scene_file);
             }
-            Command::Editor(scene_file) => {
-                let scene = Scene::load_config(&scene_file);
-                let editor = Editor { scene };
-                editor.open();
+            Command::Editor(_) => {
+                print!("EDITOR IS WIP");
             }
         },
         _ => print_usage(),
